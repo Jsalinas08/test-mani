@@ -37,9 +37,11 @@ module Types
     end
 
     def events(filters: {}, limit: 20, offset: 0)
-      # TODO: Implement filtering logic here
-      # Consider performance implications with large datasets
-      []
+
+      query = EventDao.new.filters(filters)
+
+      # Apply pagination
+      query.skip(offset).limit(limit).to_a
     end
 
     # ============================================================
