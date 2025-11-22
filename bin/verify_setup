@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+
+# Quick verification script for backend assessment setup
+
+puts "\n" + "="*60
+puts "BACKEND ASSESSMENT - SETUP VERIFICATION"
+puts "="*60 + "\n"
+
+checks_passed = 0
+total_checks = 5
+
+# Check 1: Ruby version
+print "1. Checking Ruby version... "
+ruby_version = RUBY_VERSION
+if ruby_version >= "3.2.0"
+  puts "✓ Ruby #{ruby_version}"
+  checks_passed += 1
+else
+  puts "✗ Ruby #{ruby_version} (need 3.2.0+)"
+end
+
+# Check 2: Bundler
+print "2. Checking Bundler... "
+if system('bundle --version > /dev/null 2>&1')
+  puts "✓ Installed"
+  checks_passed += 1
+else
+  puts "✗ Not found"
+end
+
+# Check 3: MongoDB connection
+print "3. Checking MongoDB connection... "
+require_relative '../config/environment'
+begin
+  Mongoid.default_client.command(ping: 1)
+  puts "✓ Connected"
+  checks_passed += 1
+rescue => e
+  puts "✗ Cannot connect (#{e.message})"
+  puts "   Hint: Make sure MongoDB is running on localhost:27017"
+  puts "   Or start with: docker-compose up mongodb"
+end
+
+# Check 4: Database seed data
+print "4. Checking seed data... "
+event_count = Event.count rescue 0
+if event_count > 1000
+  puts "✓ #{event_count} events found"
+  checks_passed += 1
+elsif event_count > 0
+  puts "⚠ Only #{event_count} events (expected 1500+)"
+  puts "   Run: bundle exec rake db:seed"
+else
+  puts "✗ No events found"
+  puts "   Run: bundle exec rake db:seed"
+end
+
+# Check 5: GraphQL endpoint
+print "5. Checking GraphQL setup... "
+begin
+  schema = BackendTestSchema
+  if schema.query && schema.mutation
+    puts "✓ Schema configured"
+    checks_passed += 1
+  else
+    puts "✗ Schema incomplete"
+  end
+rescue => e
+  puts "✗ Error: #{e.message}"
+end
+
+# Summary
+puts "\n" + "="*60
+if checks_passed == total_checks
+  puts "✓ ALL CHECKS PASSED! You're ready to start."
+  puts "="*60
+  puts "\nNext steps:"
+  puts "1. Start the server: bundle exec rails server"
+  puts "2. Visit: http://localhost:3000/graphql"
+  puts "3. Read the README.md for feature requirements"
+  puts "4. Start your screen recording"
+  puts "5. Begin implementing the features!"
+elsif checks_passed >= 3
+  puts "⚠ #{checks_passed}/#{total_checks} checks passed"
+  puts "="*60
+  puts "\nYou can start, but fix the warnings above for best results."
+else
+  puts "✗ Only #{checks_passed}/#{total_checks} checks passed"
+  puts "="*60
+  puts "\nPlease fix the issues above before starting."
+  puts "Check README.md for setup instructions."
+end
+
+puts "\n"

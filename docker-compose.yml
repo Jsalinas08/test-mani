@@ -1,0 +1,45 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-atlas-local
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_config:/data/configdb
+      - mongodb_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rails:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: backend_test_rails
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      RAILS_ENV: development
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    command: >
+      bash -c "
+        bundle install &&
+        bundle exec rails server -b 0.0.0.0
+      "
+    stdin_open: true
+    tty: true
+
+volumes:
+  mongodb_config:
+  mongodb_data:
+  bundle_cache:
