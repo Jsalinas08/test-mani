@@ -60,7 +60,31 @@ module Types
     def popular_events(limit: 10, days: 7)
       # TODO: Implement popularity ranking logic here
       # This is the most complex feature - think about performance!
-      []
+      # Calculamos la fecha de corte
+      start_date = days.days.ago.beginning_of_day
+
+      # Pipeline de agregación:
+      # 1. Filtramos compras recientes
+      # 2. Agrupamos por evento y sumamos la cantidad de tickets (o conteo de transacciones con $sum: 1)
+      # 3. Ordenamos descendente
+      # 4. Limitamos resultados
+      pipeline = [
+        { '$match' => { created_at: { '$gte' => start_date } } },
+        { '$group' => { '_id' => '$event_id', 'score' => { '$sum' => '$quantity' } } },
+        { '$sort' => { 'score' => -1 } },
+        { '$limit' => limit }
+      ]
+
+      # Ejecutamos el pipeline sobre la colección de compras
+      # Nota: Asumimos que existe el modelo Purchase. Si usas DAO, accede a Purchase.collection
+      results = Purchase.collection.aggregate(pipeline).to_a
+      # Extraemos los IDs ordenados
+      event_ids = results.pluck('_id')
+      query = EventDao.new(model: Event)
+      # Buscamos los eventos.
+      events_map = query.in({id: event_ids})
+
+      events_map
     end
   end
 end

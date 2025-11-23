@@ -33,4 +33,8 @@ class EventDao  < BaseDao
   def find(event_id)
     model.find(event_id)
   end
+
+  def in(conditions)
+    model.in(conditions)
+  end
 end
