@@ -21,6 +21,7 @@ class Event
   index({ category: 1, date: 1 })
   index({ date: 1 })
   index({ category: 1 })
+  index({ _id: 1 })
 
   # Validations
   validates :name, presence: true

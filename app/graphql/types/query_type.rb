@@ -37,8 +37,7 @@ module Types
     end
 
     def events(filters: {}, limit: 20, offset: 0)
-
-      query = EventDao.new.filters(filters)
+      query = EventDao.new(model: Event).filters(filters)
 
       # Apply pagination
       query.skip(offset).limit(limit).to_a

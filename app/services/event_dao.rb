@@ -1,10 +1,4 @@
-class EventDao
-  attr_reader :model
-
-  def initialize(model: Event)
-    @model = model
-  end
-
+class EventDao  < BaseDao
   def filters(filters)
     events = all
 
@@ -25,5 +19,18 @@ class EventDao
 
   def all
     model.all
+  end
+
+  def event_resolver(event_id, quantity)
+    model.where(id: event_id, :available_tickets.gte => quantity)&.find_one_and_update(
+      {
+        '$inc': { available_tickets: -quantity }  # Decrementa atómicamente
+      },
+      return_document: :after  # Devuelve el documento actualizado
+    )
+  end
+
+  def find(event_id)
+    model.find(event_id)
   end
 end

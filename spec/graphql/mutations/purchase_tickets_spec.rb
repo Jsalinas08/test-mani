@@ -30,7 +30,7 @@ RSpec.describe 'PurchaseTickets Mutation', type: :request do
 
       json = JSON.parse(response.body)
       data = json['data']['purchaseTickets']
-
+      debugger
       expect(data['errors']).to be_empty
       expect(data['purchase']).not_to be_nil
       expect(data['purchase']['quantity']).to eq(2)

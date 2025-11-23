@@ -28,10 +28,33 @@ module Mutations
     # - Can you use atomic operators like $inc?
     # - How do you ensure data consistency?
     def resolve(event_id:, customer_email:, customer_name:, quantity:)
-      # TODO: Implement purchase logic here
-      # This is the MOST CRITICAL feature for testing race condition handling!
+      event_dao = EventDao.new(model: Event)
+      # Operación ATÓMICA: busca Y actualiza en una sola operación
+      event = event_dao.event_resolver(event_id, quantity)
 
-      { purchase: nil, errors: [] }
+      # Si event es nil, no había tickets o el evento no existe
+      return errors_purchase(
+        ["No hay suficientes tickets disponibles o el evento no existe"]
+      ) if event.nil?
+
+      # Crear la compra
+      event_obj = event_dao.find(event_id)
+      purchase = PurchaseDao.new(model: Purchase).create_purchase(
+        event_obj:,
+        customer_email:,
+        customer_name:,
+        quantity:
+      )
+
+      { purchase: purchase, errors: [] }
+    rescue Mongoid::Errors::DocumentNotFound
+      errors_purchase(["Evento no encontrado"])
+    rescue StandardError => e
+      errors_purchase(["Error interno: #{e.message}"])
+    end
+
+    def errors_purchase(errors)
+      { purchase: nil, errors: errors }
     end
   end
 end
